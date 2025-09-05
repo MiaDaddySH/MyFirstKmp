@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -42,6 +43,15 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // put your Multiplatform dependencies here
+
+            // 添加内容协商和JSON序列化支持
+            implementation("io.ktor:ktor-server-content-negotiation:3.2.2")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:3.2.2")
+
+            // 添加HTTP客户端支持，用于调用天气API
+            implementation("io.ktor:ktor-client-core:3.2.2")
+            implementation("io.ktor:ktor-client-cio:3.2.2")
+            implementation("io.ktor:ktor-client-content-negotiation:3.2.2")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
