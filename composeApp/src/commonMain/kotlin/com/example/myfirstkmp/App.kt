@@ -52,14 +52,45 @@ class WeatherViewModel : ViewModel() {
 
 @Composable
 fun App() {
-    MaterialTheme {
-        val viewModel = viewModel<WeatherViewModel>()
-        val weatherData = viewModel.weatherData
-        val isLoading = viewModel.isLoading
-        val errorMessage = viewModel.errorMessage
+    // 若当前环境（如 iOS）没有 ViewModelStoreOwner，则提供一个
+    val parentOwner = androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner.current
+    val viewModelStore = remember { androidx.lifecycle.ViewModelStore() }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose { viewModelStore.clear() }
+    }
+    val fallbackOwner = remember {
+        object : androidx.lifecycle.ViewModelStoreOwner {
+            override val viewModelStore: androidx.lifecycle.ViewModelStore = viewModelStore
+        }
+    }
 
-        Surface(modifier = Modifier.fillMaxSize()) {
-            Column(
+        // 自定义 Factory：在非 Android 环境默认工厂未实现时，显式提供
+    val factory = remember {
+        object : androidx.lifecycle.ViewModelProvider.Factory {
+            override fun <T : androidx.lifecycle.ViewModel> create(
+                modelClass: kotlin.reflect.KClass<T>,
+                extras: androidx.lifecycle.viewmodel.CreationExtras
+            ): T {
+                if (modelClass == WeatherViewModel::class) {
+                    @Suppress("UNCHECKED_CAST")
+                    return WeatherViewModel() as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
+            }
+        }
+    }
+
+
+    val content: @Composable () -> Unit = {
+        MaterialTheme {
+            // 使用自定义 Factory 获取 ViewModel，避免默认工厂在 iOS 上未实现的问题
+                        val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<WeatherViewModel>(factory = factory)
+            val weatherData = viewModel.weatherData
+            val isLoading = viewModel.isLoading
+            val errorMessage = viewModel.errorMessage
+
+            Surface(modifier = Modifier.fillMaxSize()) {
+                Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp),
@@ -121,6 +152,18 @@ fun App() {
                 }
             }
         }
+        }
+    }
+
+    if (parentOwner == null) {
+        // iOS 等无默认 owner 的场景，提供一个
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner provides fallbackOwner
+        ) {
+            content()
+        }
+    } else {
+        content()
     }
 }
 

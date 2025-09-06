@@ -3,11 +3,6 @@ package com.example.myfirstkmp
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class WeatherRequest(
-    val city: String
-)
-
-@Serializable
 data class WeatherResponse(
     val city: String,
     val temperature: Double,

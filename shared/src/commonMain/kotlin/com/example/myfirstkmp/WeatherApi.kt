@@ -1,5 +1,6 @@
 package com.example.myfirstkmp
 
+import com.example.myfirstkmp.models.OpenWeatherResponse
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -11,7 +12,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 class WeatherApi {
-    private val client = HttpClient {
+    private val httpClient = HttpClient {
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true
@@ -20,30 +21,34 @@ class WeatherApi {
         }
     }
     
-    // 假设服务器运行在本地，使用localhost或10.0.2.2（Android模拟器访问主机的特殊IP）
-    private val baseUrl = "http://localhost:$SERVER_PORT"
-    
     suspend fun getWeather(city: String): Result<WeatherResponse> = withContext(Dispatchers.Default) {
         try {
-            // 创建请求对象
-            val request = WeatherRequest(city)
-            
-            // 发送请求到服务器
-            val response = client.post {
-                url("$baseUrl/api/weather")
-                contentType(ContentType.Application.Json)
-                setBody(request)
-            }
-            
-            // 解析响应
-            val weatherData = response.body<WeatherResponse>()
-            Result.success(weatherData)
-        } catch (e: Exception) {
-            Result.failure(e)
+            val ow: OpenWeatherResponse = httpClient.get("$OPENWEATHER_API_BASE_URL/weather") {
+                parameter("q", city)
+                parameter("appid", OPENWEATHER_API_KEY)
+                parameter("units", "metric")
+            }.body()
+
+            Result.success(
+                WeatherResponse(
+                    city = ow.name.ifEmpty { city },
+                    temperature = ow.main.temp,
+                    feelsLike = ow.main.feels_like,
+                    description = ow.weather.firstOrNull()?.description.orEmpty(),
+                    icon = ow.weather.firstOrNull()?.icon.orEmpty(),
+                    humidity = ow.main.humidity,
+                    pressure = ow.main.pressure,
+                    windSpeed = ow.wind.speed,
+                    windDirection = ow.wind.deg,
+                    timestamp = ow.dt
+                )
+            )
+        } catch (t: Throwable) {
+            Result.failure(t)
         }
     }
-    
+
     fun close() {
-        client.close()
+        httpClient.close()
     }
 }
