@@ -27,7 +27,7 @@ fun Application.module() {
 
     routing {
         get("/") {
-            call.respondText("Ktor: ${Greeting().greet()}")
+            call.respondText("Ktor")
         }
 
         // 添加天气API路由
