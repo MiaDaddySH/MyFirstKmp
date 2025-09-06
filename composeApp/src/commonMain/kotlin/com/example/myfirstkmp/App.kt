@@ -99,7 +99,7 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
             }
 
             // iOS 专属按钮：仅在 iOS 下显示
-            if (isIos) {
+            if (getPlatform().name.startsWith("iOS")) {
                 Button(
                     onClick = { /* iOS-only action */ },
                     modifier = Modifier.fillMaxWidth()
