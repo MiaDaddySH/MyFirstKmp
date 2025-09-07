@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import com.example.myfirstkmp.models.DailyForecast
 
 class WeatherViewModel : ViewModel() {
     private val weatherApi = WeatherApi()
@@ -19,7 +20,7 @@ class WeatherViewModel : ViewModel() {
      sealed class Screen {
         data object Search : Screen()
         data object ForecastList : Screen()
-        data class ForecastDetail(val day: com.example.myfirstkmp.models.DailyForecast) : Screen()
+        data class ForecastDetail(val day: DailyForecast) : Screen()
     }
 
     var currentScreen by mutableStateOf<Screen>(Screen.Search)
@@ -46,7 +47,7 @@ class WeatherViewModel : ViewModel() {
         }
     }
 
-    fun openForecastDetail(day: com.example.myfirstkmp.models.DailyForecast) {
+    fun openForecastDetail(day: DailyForecast) {
         currentScreen = Screen.ForecastDetail(day)
     }
 

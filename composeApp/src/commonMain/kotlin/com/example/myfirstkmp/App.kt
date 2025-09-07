@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.myfirstkmp
 
 import androidx.compose.foundation.layout.*
@@ -7,7 +9,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Text
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.Icon
 
 @Composable
 fun App() {
@@ -16,21 +21,62 @@ fun App() {
             val factory = rememberWeatherViewModelFactory()
             val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<WeatherViewModel>(factory = factory)
 
-            when (val screen = viewModel.currentScreen) {
-                is WeatherViewModel.Screen.Search -> WeatherScreen(viewModel)
-                is WeatherViewModel.Screen.ForecastList -> ForecastListScreen(
-                    city = viewModel.cityName,
-                    forecasts = viewModel.forecastData,
-                    isLoading = viewModel.isLoading,
-                    errorMessage = viewModel.errorMessage,
-                    onBack = { viewModel.currentScreen = WeatherViewModel.Screen.Search },
-                    onDayClick = { viewModel.openForecastDetail(it) }
-                )
-                is WeatherViewModel.Screen.ForecastDetail -> ForecastDetailScreen(
-                    city = viewModel.cityName,
-                    day = screen.day,
-                    onBack = { viewModel.navigateBack() }
-                )
+            var selectedTab by remember { mutableStateOf(0) }
+
+            Scaffold(
+                topBar = {
+                    CenterAlignedTopAppBar(
+                        title = { Text(if (selectedTab == 0) "天气" else "关于我们") }
+                    )
+                },
+                bottomBar = {
+                    NavigationBar {
+                        NavigationBarItem(
+                            selected = selectedTab == 0,
+                            onClick = {
+                                selectedTab = 0
+                                // 切回“天气搜索”页面
+                                viewModel.currentScreen = WeatherViewModel.Screen.Search
+                            },
+                            // 这里 icon 是必填，直接用文字占位，避免额外依赖图标库
+                            icon = { Icon(Icons.Outlined.Cloud, contentDescription = "天气") },
+                            label = { Text("天气") }
+                        )
+                        NavigationBarItem(
+                            selected = selectedTab == 1,
+                            onClick = { selectedTab = 1 },
+                            icon = { Icon(Icons.Outlined.Info, contentDescription = "关于我们")},
+                            label = { Text("关于我们") }
+                        )
+                    }
+                }
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
+                    if (selectedTab == 0) {
+                        when (val screen = viewModel.currentScreen) {
+                            is WeatherViewModel.Screen.Search -> WeatherScreen(viewModel)
+                            is WeatherViewModel.Screen.ForecastList -> ForecastListScreen(
+                                city = viewModel.cityName,
+                                forecasts = viewModel.forecastData,
+                                isLoading = viewModel.isLoading,
+                                errorMessage = viewModel.errorMessage,
+                                onBack = { viewModel.currentScreen = WeatherViewModel.Screen.Search },
+                                onDayClick = { viewModel.openForecastDetail(it) }
+                            )
+                            is WeatherViewModel.Screen.ForecastDetail -> ForecastDetailScreen(
+                                city = viewModel.cityName,
+                                day = screen.day,
+                                onBack = { viewModel.navigateBack() }
+                            )
+                        }
+                    } else {
+                        AboutScreen()
+                    }
+                }
             }
         }
     }
@@ -179,3 +225,4 @@ private fun getWeatherInfoList(weather: WeatherResponse): List<Pair<String, Stri
         "风向" to "${weather.windDirection}°"
     )
 }
+
