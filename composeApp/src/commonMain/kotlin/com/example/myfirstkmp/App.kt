@@ -16,7 +16,22 @@ fun App() {
             val factory = rememberWeatherViewModelFactory()
             val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<WeatherViewModel>(factory = factory)
 
-            WeatherScreen(viewModel)
+            when (val screen = viewModel.currentScreen) {
+                is WeatherViewModel.Screen.Search -> WeatherScreen(viewModel)
+                is WeatherViewModel.Screen.ForecastList -> ForecastListScreen(
+                    city = viewModel.cityName,
+                    forecasts = viewModel.forecastData,
+                    isLoading = viewModel.isLoading,
+                    errorMessage = viewModel.errorMessage,
+                    onBack = { viewModel.currentScreen = WeatherViewModel.Screen.Search },
+                    onDayClick = { viewModel.openForecastDetail(it) }
+                )
+                is WeatherViewModel.Screen.ForecastDetail -> ForecastDetailScreen(
+                    city = viewModel.cityName,
+                    day = screen.day,
+                    onBack = { viewModel.navigateBack() }
+                )
+            }
         }
     }
 }
@@ -96,6 +111,14 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("确认")
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = { viewModel.loadForecast() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("查看最近7天预报")
             }
 
             // iOS 专属按钮：仅在 iOS 下显示

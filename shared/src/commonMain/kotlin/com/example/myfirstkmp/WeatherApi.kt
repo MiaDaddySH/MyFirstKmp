@@ -9,6 +9,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import  io.ktor.client.plugins.logging.*
 
 class WeatherApi {
     private val httpClient = HttpClient {
@@ -17,6 +18,11 @@ class WeatherApi {
                 ignoreUnknownKeys = true
                 coerceInputValues = true
             })
+        }
+                // 新增：安装日志插件
+        Logging {
+            level = io.ktor.client.plugins.logging.LogLevel.ALL
+            logger = io.ktor.client.plugins.logging.Logger.DEFAULT
         }
     }
     
@@ -44,6 +50,39 @@ class WeatherApi {
             )
         } catch (t: Throwable) {
             Result.failure(t)
+        }
+    }
+
+    suspend fun getDailyForecast7Days(city: String): Result<List<com.example.myfirstkmp.models.DailyForecast>> = withContext(Dispatchers.Default) {
+        try {
+            val resp: com.example.myfirstkmp.models.ForecastDailyResponse =
+                httpClient.get("$OPENWEATHER_API_BASE_URL/forecast/daily") {
+                    parameter("q", city)
+                    parameter("cnt", 7)
+//                    parameter("units", "metric")
+                    parameter("appid", OPENWEATHER_API_KEY)
+                }.body()
+
+            val daily = resp.list.map { item ->
+                com.example.myfirstkmp.models.DailyForecast(
+                    date = item.dt,
+                    temperature = item.temp.day,
+                    feelsLike = item.temp.day,
+                    description = item.weather.firstOrNull()?.description ?: "",
+                    icon = item.weather.firstOrNull()?.icon ?: "",
+                    humidity = item.humidity,
+                    pressure = item.pressure,
+                    windSpeed = item.speed,
+                    windDirection = item.deg
+                )
+            }
+
+            if (daily.isEmpty()) {
+                return@withContext Result.failure(IllegalStateException("未获取到7日预报数据"))
+            }
+            Result.success(daily)
+        } catch (t: Throwable) {
+            Result.failure(IllegalStateException("获取7日预报失败: ${t.message}", t))
         }
     }
 

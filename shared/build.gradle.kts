@@ -52,6 +52,7 @@ kotlin {
             implementation("io.ktor:ktor-client-core:3.2.2")
             // implementation("io.ktor:ktor-client-cio:3.2.2")
             implementation("io.ktor:ktor-client-content-negotiation:3.2.2")
+            implementation("io.ktor:ktor-client-logging:3.2.2")
         }
         androidMain.dependencies {
             implementation("io.ktor:ktor-client-okhttp:3.2.2")

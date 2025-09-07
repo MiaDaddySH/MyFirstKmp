@@ -14,7 +14,46 @@ class WeatherViewModel : ViewModel() {
     var isLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
     var weatherData by mutableStateOf<WeatherResponse?>(null)
+    var forecastData by mutableStateOf<List<com.example.myfirstkmp.models.DailyForecast>>(emptyList())
 
+     sealed class Screen {
+        data object Search : Screen()
+        data object ForecastList : Screen()
+        data class ForecastDetail(val day: com.example.myfirstkmp.models.DailyForecast) : Screen()
+    }
+
+    var currentScreen by mutableStateOf<Screen>(Screen.Search)
+
+    fun loadForecast() {
+        if (cityName.isBlank()) {
+            errorMessage = "请输入城市名称"
+            return
+        }
+        isLoading = true
+        errorMessage = null
+        viewModelScope.launch {
+            weatherApi.getDailyForecast7Days(cityName).fold(
+                onSuccess = { list ->
+                    forecastData = list
+                    isLoading = false
+                    currentScreen = Screen.ForecastList
+                },
+                onFailure = { e ->
+                    errorMessage = "获取预报失败: ${e.message}"
+                    isLoading = false
+                }
+            )
+        }
+    }
+
+    fun openForecastDetail(day: com.example.myfirstkmp.models.DailyForecast) {
+        currentScreen = Screen.ForecastDetail(day)
+    }
+
+    fun navigateBack() {
+        currentScreen = Screen.ForecastList
+    }
+    
     fun getWeather() {
         if (cityName.isBlank()) {
             errorMessage = "请输入城市名称"
@@ -37,6 +76,7 @@ class WeatherViewModel : ViewModel() {
             )
         }
     }
+
     override fun onCleared() {
         super.onCleared()
         weatherApi.close()
