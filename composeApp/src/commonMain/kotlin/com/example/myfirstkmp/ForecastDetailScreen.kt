@@ -20,6 +20,7 @@ fun ForecastDetailScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .padding(16.dp)
         ) {
             Row(
@@ -37,7 +38,7 @@ fun ForecastDetailScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(text = "时间戳: ${day.date}")
+            Text(text = formatDate(day.date))
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "温度: ${day.temperature}°C")
             Text(text = "体感温度: ${day.feelsLike}°C")

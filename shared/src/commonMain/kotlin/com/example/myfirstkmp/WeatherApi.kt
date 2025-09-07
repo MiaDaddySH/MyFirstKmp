@@ -68,42 +68,21 @@ class WeatherApi {
                 }.body()
 
             // 3) 将3小时粒度按“天”聚合为 DailyForecast
-            val tz = forecastResp.city.timezone // 秒
-            val dayBuckets = forecastResp.list.groupBy { item ->
-                ((item.dt + tz) / 86_400L) // 按本地天分组
+            val list3h = forecastResp.list.map { item ->
+                val weather = item.weather.firstOrNull()
+                com.example.myfirstkmp.models.DailyForecast(
+                    date = item.dt,                      // 该 3 小时段的 UTC 秒时间戳
+                    temperature = item.main.temp,
+                    feelsLike = item.main.feels_like,
+                    description = weather?.description ?: "",
+                    icon = weather?.icon ?: "",
+                    humidity = item.main.humidity,
+                    pressure = item.main.pressure,
+                    windSpeed = item.wind.speed,
+                    windDirection = item.wind.deg
+                )
             }
-
-            val daily = dayBuckets.entries
-                .sortedBy { it.key }
-                .map { (_, entries) ->
-                    val avgTemp = entries.map { it.main.temp }.average()
-                    val avgFeels = entries.map { it.main.feels_like }.average()
-                    val avgHumidity = entries.map { it.main.humidity }.average()
-                    val avgPressure = entries.map { it.main.pressure }.average()
-                    val avgWindSpeed = entries.map { it.wind.speed }.average()
-                    val avgWindDeg = entries.map { it.wind.deg }.average()
-
-                    val allWeathers = entries.flatMap { it.weather }
-                    val topWeather = allWeathers
-                        .groupBy { it.icon to it.description }
-                        .maxByOrNull { it.value.size }?.key
-
-                    val dateEpochSec = entries.minOf { it.dt } // 该天最早的UTC时间点
-
-                    com.example.myfirstkmp.models.DailyForecast(
-                        date = dateEpochSec,
-                        temperature = avgTemp,
-                        feelsLike = avgFeels,
-                        description = topWeather?.second ?: (allWeathers.firstOrNull()?.description ?: ""),
-                        icon = topWeather?.first ?: (allWeathers.firstOrNull()?.icon ?: ""),
-                        humidity = avgHumidity.toInt(),
-                        pressure = avgPressure.toInt(),
-                        windSpeed = avgWindSpeed,
-                        windDirection = avgWindDeg.toInt()
-                    )
-                }
-                .take(7) // 上限7天（/forecast 实际约5天）
-            daily
+            list3h
         }
     }
 
